@@ -11,6 +11,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.microsoft.azure.storage.CloudStorageAccount;
+import com.microsoft.azure.storage.blob.BlobProperties;
 import com.microsoft.azure.storage.blob.CloudBlob;
 import com.microsoft.azure.storage.blob.CloudBlobClient;
 import com.microsoft.azure.storage.blob.CloudBlobContainer;
@@ -24,22 +25,33 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 class BlobStorageConnection {
 
-    String inputContainerName = "";
-    String outputContainerName = "";
-    String storageConnectionString = "";
+    String inputContainerName;
+    String outputContainerName;
+    String storageConnectionString;
     CloudBlobContainer inputContainer;
     CloudBlobContainer outputContainer;
-    private Context context;
+    StorageConnectionSet delegate;
 
-    BlobStorageConnection(Context context){
+    BlobStorageConnection(SharedPreferences preferences){
 
-        this.context = context.getApplicationContext();
+
+        Log.d("TAG", "Getting credentials");
+        inputContainerName = getCredential(preferences, "inputContainerName");
+        outputContainerName = getCredential(preferences, "outputContainerName");
+        storageConnectionString =  getCredential(preferences, "connectionString");
+
+        blobStorageConnection(inputContainerName,outputContainerName, storageConnectionString);
+
+    }
+
+    private void blobStorageConnection(String inputContainerName, String outputContainerName, String storageConnectionString){
+
         Log.d("TAG", "Got the context");
         try{
             Log.d("TAG", "Getting credentials");
-            this.inputContainerName = getCredential(this.context.getString(R.string.input_container));
-            this.outputContainerName = getCredential(this.context.getString(R.string.output_container));
-            this.storageConnectionString =  getCredential(this.context.getString(R.string.connection_string));
+            this.inputContainerName = inputContainerName;
+            this.outputContainerName = outputContainerName;
+            this.storageConnectionString = storageConnectionString;
             Log.d("TAG", "Got them");
             Log.d("TAG", "input: " + inputContainerName);
             Log.d("TAG", "output: " + outputContainerName);
@@ -51,14 +63,14 @@ class BlobStorageConnection {
             outputContainer = blobClient.getContainerReference(outputContainerName);
 
         }catch (Exception e){
-            Toast.makeText(this.context, "Please fill in credentials", Toast.LENGTH_SHORT).show();
+
+            delegate.storageConnectionSet(false);
             Log.e("TAG",e.toString());
         }
 
     }
 
-    private String getCredential(String credential) {
-        SharedPreferences prefs = context.getSharedPreferences(context.getString(R.string.app_name), 0);
+    private String getCredential(SharedPreferences prefs, String credential) {
         return prefs.getString(credential, "");
 
     }
@@ -67,21 +79,18 @@ class BlobStorageConnection {
 
 class ListContainerBlobs extends AsyncTask<Void, Integer, Integer>{
 
-
     private ArrayList<String> inputBlobList = new ArrayList<>();
     private ArrayList<String> outputBlobList = new ArrayList<>();
 
     private BlobStorageConnection blobStorageConnection;
     private CloudBlobContainer inputContainer;
     private CloudBlobContainer outputContainer;
-    private Context context;
 
     AsyncResponse delegate = null;
 
     // Create constructor in order to allow to pass the context as a parameter
-    ListContainerBlobs(Context context, BlobStorageConnection blobStorageConnection){
+    ListContainerBlobs(BlobStorageConnection blobStorageConnection){
         this.blobStorageConnection = blobStorageConnection;
-        this.context = context;
 
     }
 
@@ -143,8 +152,6 @@ class ListContainerBlobs extends AsyncTask<Void, Integer, Integer>{
 
         // loop over output blobs
 
-
-
         try {
             for (ListBlobItem blobItem : outputContainer.listBlobs()) {
                 String blobUri = blobItem.getUri().toString();
@@ -168,29 +175,10 @@ class ListContainerBlobs extends AsyncTask<Void, Integer, Integer>{
 
     @Override
     protected void onPostExecute(Integer result){
-        // set up the RecyclerView
-        Log.d("TAG", "in post");
 
         if(result == 3){
-            AlertDialog.Builder builder = new AlertDialog.Builder(context);
-
-            builder.setMessage("Are you sure the your inputted the names of your containers correctly? They weren't found. Please check your blob storage information in the settings page.");
-            builder.setPositiveButton("Go to Settings", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
-                    Intent intent = new Intent(context, Settings.class);
-                    context.startActivity(intent);
-                }
-            });
-            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
-
-                }
-            });
-
-            AlertDialog dialog = builder.create();
-
-            dialog.show();
-            return;
+           delegate.getBlobList(null, null);
+           return;
         }
 
         delegate.getBlobList(inputBlobList, outputBlobList);
@@ -224,10 +212,15 @@ class UploadToBlobTask extends AsyncTask<String, Integer, Integer> {
             // Create or overwrite the blob (with the name "example.jpeg") with contents from a local file.
             inputFilename =  imgPaths[1];
             CloudBlockBlob blob = container.getBlockBlobReference(inputFilename);
+
             File source = new File(imgPath);
             blob.upload(new FileInputStream(source), source.length());
             Log.d("TAG", "Sent it");
 
+            // Set content type
+            BlobProperties properties = blob.getProperties();
+            properties.setContentType("image/jpeg");
+            blob.uploadProperties();
             return 1;
         }
         catch (Exception e)
@@ -366,13 +359,12 @@ class CheckForOutputImage extends AsyncTask<ArrayList<String>, Integer, Integer>
 class DeleteBlob extends  AsyncTask<String, Integer, Integer>{
 
     private BlobStorageConnection blobStorageConnection;
-    private Context context;
     private String blobToDeleteName;
     private String blobType;
+    BlobDeleted delegate = null;
 
-    DeleteBlob(BlobStorageConnection blobStorageConnection, Context context){
+    DeleteBlob(BlobStorageConnection blobStorageConnection){
         this.blobStorageConnection = blobStorageConnection;
-        this.context = context;
     }
 
     @Override
@@ -409,8 +401,8 @@ class DeleteBlob extends  AsyncTask<String, Integer, Integer>{
     }
     protected void onPostExecute(Integer result){
 
-        if (result == 1) Toast.makeText(context, "Successfully deleted " + blobToDeleteName + " from " + blobType + " folder.", Toast.LENGTH_LONG).show();
-        else Toast.makeText(context, "Couldn't delete " + blobToDeleteName + " from " + blobType + " folder.", Toast.LENGTH_LONG).show();
+        if (result == 1) delegate.blobDeletedSuccess(true, blobToDeleteName, blobType);
+        else delegate.blobDeletedSuccess(false, blobToDeleteName, blobType);
 
     }
 }

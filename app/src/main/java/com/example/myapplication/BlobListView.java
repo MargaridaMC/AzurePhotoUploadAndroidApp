@@ -20,6 +20,7 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -29,7 +30,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
-public class BlobListView extends Activity implements MyRecyclerViewAdapter.ItemClickListener, AsyncResponse {
+public class BlobListView extends Activity implements MyRecyclerViewAdapter.ItemClickListener, AsyncResponse, BlobDeleted {
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -56,6 +57,7 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
     static  BlobStorageConnection blobStorageConnection;
     ArrayList<String> inputBlobList;
     ArrayList<String> outputBlobList;
+    SharedPreferences preferences;
 
     private SwipeRefreshLayout swipeContainer;
     final BlobListView thisClass = this;
@@ -70,7 +72,8 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
         navView.setSelectedItemId(R.id.navigation_dashboard);
         navView.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
 
-        blobStorageConnection = new BlobStorageConnection(this);
+        preferences = this.getSharedPreferences(getString(R.string.app_name), 0);
+        blobStorageConnection = new BlobStorageConnection(preferences);
         checkCredentials();
 
         swipeContainer = findViewById(R.id.swipecontainer);
@@ -86,7 +89,7 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
         String outputBlobListSerialized = prefs.getString(getString(R.string.outputBlobList), "");
 
         if(inputBlobListSerialized.isEmpty() || outputBlobListSerialized.isEmpty()){
-            ListContainerBlobs asyncTask = new ListContainerBlobs(this, blobStorageConnection);
+            ListContainerBlobs asyncTask = new ListContainerBlobs(blobStorageConnection);
             asyncTask.delegate = this;
             asyncTask.execute();
             //fillBlobList(inputBlobList, outputBlobList);
@@ -109,7 +112,7 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
         @Override
         public void onRefresh() {
             Log.d("TAG", "Refreshing");
-            ListContainerBlobs asyncTask = new ListContainerBlobs(thisClass, blobStorageConnection);
+            ListContainerBlobs asyncTask = new ListContainerBlobs(blobStorageConnection);
             asyncTask.delegate = thisClass;
             asyncTask.execute();
             fillBlobList(inputBlobList, outputBlobList);
@@ -118,6 +121,29 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
 
     @Override
     public void getBlobList(ArrayList<String> inputBlobList, ArrayList<String> outputBlobList){
+
+        if(inputBlobList == null || outputBlobList == null){
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+            builder.setMessage("Are you sure the your inputted the names of your containers correctly? They weren't found. Please check your blob storage information in the settings page.");
+            builder.setPositiveButton("Go to Settings", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    Intent intent = new Intent(thisClass, Settings.class);
+                    thisClass.startActivity(intent);
+                }
+            });
+            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+
+                }
+            });
+
+            AlertDialog dialog = builder.create();
+
+            dialog.show();
+            return;
+        }
+
         this.inputBlobList = inputBlobList;
         this.outputBlobList = outputBlobList;
 
@@ -209,7 +235,6 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
             return;
         }
 
-
         // Assign popup menu to the list element
         PopupMenu popupMenu = new PopupMenu(this, view);
         popupMenu.getMenuInflater().inflate(R.menu.blob_list_popup_menu,popupMenu.getMenu());
@@ -230,11 +255,11 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
                         return true;
                     case R.id.delete:
                         // Set the text color to blue
-                        //Toast.makeText(context, "You clicked delete", Toast.LENGTH_SHORT).show();
-                        DeleteBlob deleteBlob = new DeleteBlob(blobStorageConnection, context);
+                        DeleteBlob deleteBlob = new DeleteBlob(blobStorageConnection);
+                        deleteBlob.delegate = thisClass;
                         deleteBlob.execute(selectedBlobName, blobType);
 
-                        ListContainerBlobs listBlobs = new ListContainerBlobs(context, blobStorageConnection);
+                        ListContainerBlobs listBlobs = new ListContainerBlobs(blobStorageConnection);
                         listBlobs.delegate = thisClass;
                         listBlobs.execute();
                         return true;
@@ -251,7 +276,7 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
 
     void viewImage(String filename, String blobType){
 
-        Log.d("TAG", "Opeing image for view");
+        Log.d("TAG", "Opening image for view");
         File imageLocation = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), filename);
         Uri path = FileProvider.getUriForFile(this,  getPackageName() + ".provider", imageLocation);
         boolean fileExists = imageLocation.exists();
@@ -265,7 +290,7 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
         }
 
         Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setDataAndType(path, "image/*");
+        intent.setDataAndType(path, "image/jpeg");
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         startActivity(intent);
     }
@@ -275,7 +300,8 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
         // blobType should be "input" or "output"
 
         // If the blob list view hasn't been open yet, this variable hasn't been set
-        if (blobStorageConnection == null) blobStorageConnection = new BlobStorageConnection(context);
+        SharedPreferences preferences = context.getSharedPreferences(context.getResources().getString(R.string.app_name), 0);
+        if (blobStorageConnection == null) blobStorageConnection = new BlobStorageConnection(preferences);
 
         SharedPreferences prefs = context.getSharedPreferences(context.getResources().getString(R.string.app_name), 0);
         ArrayList<Uri> uris = new ArrayList<>();
@@ -335,6 +361,12 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
             Log.e("TAG",e.toString());
         }
 
+    }
+
+    @Override
+    public void blobDeletedSuccess(boolean success, String blobToDeleteName, String blobType){
+        if(success) Toast.makeText(this, "Successfully deleted " + blobToDeleteName + " from " + blobType + " folder.", Toast.LENGTH_LONG).show();
+        else Toast.makeText(this, "Couldn't delete " + blobToDeleteName + " from " + blobType + " folder.", Toast.LENGTH_LONG).show();
     }
 }
 

@@ -43,7 +43,7 @@ import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class MainActivity extends Activity implements OutboxCheck, UploadedToStorage {
+public class MainActivity extends Activity implements OutboxCheck, UploadedToStorage, StorageConnectionSet {
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -86,8 +86,11 @@ public class MainActivity extends Activity implements OutboxCheck, UploadedToSto
         navView.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
         createNotificationChannel();
 
+        SharedPreferences preferences = this.getSharedPreferences(getString(R.string.app_name), 0);
+
         try{
-            blobStorageConnection = new BlobStorageConnection(this);
+            blobStorageConnection = new BlobStorageConnection(preferences);
+            blobStorageConnection.delegate = this;
         }catch (NullPointerException e){
             Toast.makeText(this, "Please fill in credentials", Toast.LENGTH_SHORT).show();
             Log.e("TAG","Nothing there" );
@@ -187,7 +190,7 @@ public class MainActivity extends Activity implements OutboxCheck, UploadedToSto
         // Sets the type as image/*. This ensures only components of type image are selected
         intent.setType("image/*");
         //We pass an extra array with the accepted mime types. This will ensure only components with these MIME types as targeted.
-        String[] mimeTypes = {"image/jpeg", "image/png"};
+        String[] mimeTypes = {"image/jpeg"};
         intent.putExtra(Intent.EXTRA_MIME_TYPES,mimeTypes);
         // Launching the Intent
         startActivityForResult(intent, GALLERY_REQUEST_CODE);
@@ -279,7 +282,7 @@ public class MainActivity extends Activity implements OutboxCheck, UploadedToSto
         UploadToBlobTask blobTask;
         Uri selectedImage;
 
-
+        Toast.makeText(this, "Trying to upload image.", Toast.LENGTH_LONG).show();
         // Result code is RESULT_OK only if the user selects an Image
         if (resultCode == Activity.RESULT_OK) {
             switch (requestCode){
@@ -428,6 +431,12 @@ public class MainActivity extends Activity implements OutboxCheck, UploadedToSto
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
         }
+    }
+
+    @Override
+    public void storageConnectionSet(boolean success){
+        if(!success)  Toast.makeText(this, "Please fill in credentials", Toast.LENGTH_SHORT).show();
+
     }
 
 }

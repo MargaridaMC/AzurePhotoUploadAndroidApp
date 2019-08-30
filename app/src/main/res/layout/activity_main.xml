@@ -43,7 +43,7 @@
         android:layout_marginEnd="32dp"
         android:layout_marginBottom="32dp"
         android:onClick="captureFromCamera"
-        android:text="Select Image from Camera"
+        android:text="Take Photo"
         app:layout_constraintBottom_toTopOf="@+id/nav_view"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/button"
