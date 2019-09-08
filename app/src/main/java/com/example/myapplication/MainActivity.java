@@ -25,6 +25,8 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.FileProvider;
+import android.text.InputFilter;
+import android.text.Spanned;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
@@ -146,7 +148,7 @@ public class MainActivity extends Activity implements OutboxCheck, UploadedToSto
             });
             builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int id) {
-                    return;
+
                 }
             });
 
@@ -241,10 +243,22 @@ public class MainActivity extends Activity implements OutboxCheck, UploadedToSto
 
     }
 
+    InputFilter filter = new InputFilter() {
+        public CharSequence filter(CharSequence source, int start, int end,
+                                   Spanned dest, int dstart, int dend) {
+            for (int i = start; i < end; i++) {
+                if (!(Character.isLetterOrDigit(source.charAt(i)) || source.charAt(i) == '_')) {
+                    return "";
+                }
+            }
+            return null;
+        }
+    };
+
     public void requestFilename(final int requestCode, final int resultCode, final Intent data){
 
         SimpleDateFormat dateFormat;
-        dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
+        dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault());
         dateFormat.setTimeZone(TimeZone.getDefault());
         Date date = new Date();
         final String now = dateFormat.format(date) + ".jpg";
@@ -255,6 +269,7 @@ public class MainActivity extends Activity implements OutboxCheck, UploadedToSto
         // Set up the input
         final EditText input = new EditText(this);
         input.setText(now);
+        input.setFilters(new InputFilter[]{filter});
         builder.setView(input);
 
         // Set up the buttons
@@ -268,9 +283,7 @@ public class MainActivity extends Activity implements OutboxCheck, UploadedToSto
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                filename = now;
                 dialog.cancel();
-                continueOnActivityResult( requestCode, resultCode, data);
             }
         });
 
@@ -350,6 +363,8 @@ public class MainActivity extends Activity implements OutboxCheck, UploadedToSto
 
     @Override
     public void checkOutbox(ArrayList filenames, boolean fileIsThere){
+
+        if(filenames.size() == 0) return;
 
         if(fileIsThere){
             Log.d("TAG", "Trying to notify about file " + filenames.toString());

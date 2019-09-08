@@ -87,8 +87,13 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
         SharedPreferences prefs = this.getSharedPreferences(getString(R.string.app_name), 0);
         String inputBlobListSerialized = prefs.getString(getString(R.string.inputBlobList), "");
         String outputBlobListSerialized = prefs.getString(getString(R.string.outputBlobList), "");
+        boolean blobListsFilled = false;
 
-        if(inputBlobListSerialized.isEmpty() || outputBlobListSerialized.isEmpty()){
+        if(inputBlobListSerialized != null && outputBlobListSerialized!=null){
+            blobListsFilled = inputBlobListSerialized.isEmpty() || outputBlobListSerialized.isEmpty();
+        }
+
+        if(blobListsFilled){
             ListContainerBlobs asyncTask = new ListContainerBlobs(blobStorageConnection);
             asyncTask.delegate = this;
             asyncTask.execute();
@@ -104,8 +109,6 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
             fillBlobList(inputBlobList, outputBlobList);
 
         }
-
-
     }
 
     SwipeRefreshLayout.OnRefreshListener onLayoutRefresh = new SwipeRefreshLayout.OnRefreshListener() {
@@ -238,7 +241,7 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
         // Assign popup menu to the list element
         PopupMenu popupMenu = new PopupMenu(this, view);
         popupMenu.getMenuInflater().inflate(R.menu.blob_list_popup_menu,popupMenu.getMenu());
-        popupMenu.setGravity(Gravity.RIGHT);
+        popupMenu.setGravity(Gravity.END);
 
         popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
             @Override
@@ -313,6 +316,8 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
             filenames = gson.fromJson(prefs.getString("processedImages",""), type);
         }
 
+        if(filenames != null){
+
         for(String filename: filenames) {
 
             File imageLocation = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), filename);
@@ -334,6 +339,11 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
             Uri path = FileProvider.getUriForFile(context, context.getApplicationContext().getPackageName() + ".provider", imageLocation);
             uris.add(path);
         }
+        }
+        else{
+            Toast.makeText(context, "Couldn't find files.", Toast.LENGTH_SHORT).show();
+
+        }
 
         String email = prefs.getString("email", "");
 
@@ -344,7 +354,7 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
         emailIntent.putExtra(Intent.EXTRA_EMAIL, to);
         emailIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
       //  emailIntent.putExtra(Intent.EXTRA_STREAM, path);
-        emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Facturas " + filenames.toString());
+        if(filenames != null) emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Facturas " + filenames.toString());
         emailIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         try {
           //  context.startActivity(Intent.createChooser(emailIntent, "Send email..."));

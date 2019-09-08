@@ -46,7 +46,6 @@ class BlobStorageConnection {
 
     private void blobStorageConnection(String inputContainerName, String outputContainerName, String storageConnectionString){
 
-        Log.d("TAG", "Got the context");
         try{
             Log.d("TAG", "Getting credentials");
             this.inputContainerName = inputContainerName;
