@@ -61,6 +61,7 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
 
     private SwipeRefreshLayout swipeContainer;
     final BlobListView thisClass = this;
+    int numberInputBlobs = 0;
     String TAG = "TAG";
 
 
@@ -76,7 +77,7 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
         blobStorageConnection = new BlobStorageConnection(preferences);
         checkCredentials();
 
-        swipeContainer = findViewById(R.id.swipecontainer);
+        swipeContainer = findViewById(R.id.swipeContainer);
 
         // Setup refresh listener which triggers new data loading
         swipeContainer.setOnRefreshListener(onLayoutRefresh);
@@ -109,6 +110,8 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
             fillBlobList(inputBlobList, outputBlobList);
 
         }
+
+
     }
 
     SwipeRefreshLayout.OnRefreshListener onLayoutRefresh = new SwipeRefreshLayout.OnRefreshListener() {
@@ -168,23 +171,20 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
 
     public void fillBlobList(ArrayList<String> inputBlobList, ArrayList<String> outputBlobList){
 
-        MyRecyclerViewAdapter inputAdapter;
-        MyRecyclerViewAdapter outputAdapter;
+        RecyclerView recyclerView = findViewById(R.id.blobList);
 
-        RecyclerView inputRecyclerView = findViewById(R.id.inputContainerBlobs);
-        RecyclerView outputRecyclerView = findViewById(R.id.outputContainerBlobs);
+        numberInputBlobs = inputBlobList.size();
 
-        // List input blobs
-        inputRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        inputAdapter = new MyRecyclerViewAdapter(this, inputBlobList);
-        inputAdapter.setClickListener(this);
-        inputRecyclerView.setAdapter(inputAdapter);
+        ArrayList<String> allBlobs = new ArrayList<>();
+        allBlobs.add("Input Container Blobs:");
+        allBlobs.addAll(inputBlobList);
+        allBlobs.add("Output Container Blobs:");
+        allBlobs.addAll(outputBlobList);
 
-        // List output blobs
-        outputRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        outputAdapter = new MyRecyclerViewAdapter(this, outputBlobList);
-        outputAdapter.setClickListener(this);
-        outputRecyclerView.setAdapter(outputAdapter);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        MyRecyclerViewAdapter recyclerViewAdapter = new MyRecyclerViewAdapter(this, allBlobs, numberInputBlobs);
+        recyclerViewAdapter.setClickListener(this);
+        recyclerView.setAdapter(recyclerViewAdapter);
 
     }
 
@@ -220,23 +220,22 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
     @Override
     public void onItemClick(View view, int position) {
 
+        if(position == 0 || position == numberInputBlobs + 1) return;
+
         final String selectedBlobName;
         final Context context = this.getApplicationContext();
         final String blobType;
-        View parentView = (View) view.getParent();
-        final String name = parentView.getTag().toString();
-        // Toast.makeText(this, "You clicked " + name + " on row number " + position, Toast.LENGTH_SHORT).show();
 
-        if(name.equals("inputContainerBlobs")){
-            selectedBlobName = this.inputBlobList.get(position);
+        if(position <= numberInputBlobs + 1){
             blobType = "input";
-        } else if(name.equals("outputContainerBlobs")){
-            selectedBlobName = this.outputBlobList.get(position);
-            blobType = "output";
+            selectedBlobName = this.inputBlobList.get(position - 1);
+           // Toast.makeText(this, "You clicked " + blobType + " on row number " +  Integer.toString(position - 1), Toast.LENGTH_SHORT).show();
         } else {
-            Log.d("TAG", "Couldn't determine the origin of the click");
-            return;
+            blobType = "output";
+            selectedBlobName = this.outputBlobList.get(position - numberInputBlobs - 2);
+           // Toast.makeText(this, "You clicked " + blobType + " on row number " + Integer.toString(position - numberInputBlobs - 2), Toast.LENGTH_SHORT).show();
         }
+
 
         // Assign popup menu to the list element
         PopupMenu popupMenu = new PopupMenu(this, view);

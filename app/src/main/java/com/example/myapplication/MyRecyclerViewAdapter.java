@@ -1,6 +1,7 @@
 package com.example.myapplication;
 
 import android.content.Context;
+import android.graphics.Typeface;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,11 +15,13 @@ public class MyRecyclerViewAdapter extends RecyclerView.Adapter<MyRecyclerViewAd
     private List<String> mData;
     private LayoutInflater mInflater;
     private ItemClickListener mClickListener;
+    private int numInputBlobs;
 
     // data is passed into the constructor
-    MyRecyclerViewAdapter(Context context, List<String> data) {
+    MyRecyclerViewAdapter(Context context, List<String> data, int numInputBlobs) {
         this.mInflater = LayoutInflater.from(context);
         this.mData = data;
+        this.numInputBlobs = numInputBlobs;
     }
 
     // inflates the row layout from xml when needed
@@ -31,9 +34,12 @@ public class MyRecyclerViewAdapter extends RecyclerView.Adapter<MyRecyclerViewAd
     // binds the data to the TextView in each row
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-        String animal = mData.get(position);
-        holder.myTextView.setText(animal);
-        holder.myTextView.setTextSize(16);
+        String element = mData.get(position);
+        holder.myTextView.setText(element);
+        holder.myTextView.setTextSize(18);
+        if(position == 0 || position == 1 + numInputBlobs){
+            holder.myTextView.setTypeface(null, Typeface.BOLD_ITALIC);
+        }
     }
 
     // total number of rows
@@ -49,7 +55,7 @@ public class MyRecyclerViewAdapter extends RecyclerView.Adapter<MyRecyclerViewAd
 
         ViewHolder(View itemView) {
             super(itemView);
-            myTextView = itemView.findViewById(R.id.tvAnimalName);
+            myTextView = itemView.findViewById(R.id.row);
             itemView.setOnClickListener(this);
         }
 
@@ -60,9 +66,7 @@ public class MyRecyclerViewAdapter extends RecyclerView.Adapter<MyRecyclerViewAd
     }
 
     // convenience method for getting data at click position
-    String getItem(int id) {
-        return mData.get(id);
-    }
+    //String getItem(int id) { return mData.get(id);}
 
     // allows clicks events to be caught
     void setClickListener(ItemClickListener itemClickListener) {
