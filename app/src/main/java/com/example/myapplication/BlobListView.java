@@ -185,6 +185,7 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
         MyRecyclerViewAdapter recyclerViewAdapter = new MyRecyclerViewAdapter(this, allBlobs, numberInputBlobs);
         recyclerViewAdapter.setClickListener(this);
         recyclerView.setAdapter(recyclerViewAdapter);
+        recyclerView.setAdapter(recyclerViewAdapter);
 
     }
 

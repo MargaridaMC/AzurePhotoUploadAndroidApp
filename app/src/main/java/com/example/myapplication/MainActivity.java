@@ -287,7 +287,9 @@ public class MainActivity extends Activity implements OutboxCheck, UploadedToSto
             }
         });
 
-        builder.show();
+        AlertDialog dialog = builder.create();
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.show();
     }
 
     public void continueOnActivityResult(int requestCode,int resultCode, Intent data){
