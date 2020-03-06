@@ -47,28 +47,6 @@ import java.util.TimerTask;
 
 public class MainActivity extends Activity implements OutboxCheck, UploadedToStorage, StorageConnectionSet {
 
-    private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
-            = new BottomNavigationView.OnNavigationItemSelectedListener() {
-
-        @Override
-        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-            Intent intent;
-            switch (item.getItemId()) {
-                case R.id.navigation_home:
-                    return true;
-                case R.id.navigation_dashboard:
-                    intent = new Intent(MainActivity.this, BlobListView.class);
-                    startActivity(intent);
-                    return true;
-                case R.id.navigation_notifications:
-                    intent = new Intent(MainActivity.this, Settings.class);
-                    startActivity(intent);
-                    return true;
-            }
-            return false;
-        }
-    };
-
     static final int GALLERY_REQUEST_CODE = 1;
     static final int CAMERA_REQUEST_CODE = 2;
     static final int CAMERA_METHOD_PERMISSIONS_CODE = 3;
@@ -85,18 +63,53 @@ public class MainActivity extends Activity implements OutboxCheck, UploadedToSto
         setContentView(R.layout.activity_main);
         BottomNavigationView navView = findViewById(R.id.nav_view);
         navView.setSelectedItemId(R.id.navigation_home);
-        navView.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+
         createNotificationChannel();
 
-        SharedPreferences preferences = this.getSharedPreferences(getString(R.string.app_name), 0);
+        final SharedPreferences preferences = this.getSharedPreferences(getString(R.string.app_name), 0);
 
         try{
             blobStorageConnection = new BlobStorageConnection(preferences);
             blobStorageConnection.delegate = this;
         }catch (NullPointerException e){
-            Toast.makeText(this, "Please fill in credentials", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please fill in your credentials in the settings page.", Toast.LENGTH_SHORT).show();
             Log.e("TAG","Nothing there" );
         }
+
+        final Context context = this;
+        BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener  = new BottomNavigationView.OnNavigationItemSelectedListener() {
+
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                Intent intent;
+                switch (item.getItemId()) {
+                    case R.id.navigation_home:
+                        return true;
+                    case R.id.navigation_blob_list:
+                        // First check if credentials are set
+                        try{
+                            blobStorageConnection = new BlobStorageConnection(preferences);
+                        }catch (NullPointerException e){
+                            Toast.makeText(context, "Please fill in your credentials in the settings page.", Toast.LENGTH_SHORT).show();
+                            Log.e("TAG","Nothing there" );
+                            return false;
+                        }
+
+                        // Then if they are go to BlobListViewActivity
+                        intent = new Intent(MainActivity.this, BlobListView.class);
+                        startActivity(intent);
+                        return true;
+                    case R.id.navigation_settings:
+                        intent = new Intent(MainActivity.this, Settings.class);
+                        startActivity(intent);
+                        return true;
+                }
+                return false;
+            }
+        };
+
+
+        navView.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
 
         Log.d("TAG", "Done with onCreate");
     }
@@ -111,7 +124,7 @@ public class MainActivity extends Activity implements OutboxCheck, UploadedToSto
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] grantResults){
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults){
         super.onRequestPermissionsResult(requestCode,permissions,grantResults);
         switch(requestCode){
             case 1:

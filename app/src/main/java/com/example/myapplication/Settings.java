@@ -1,6 +1,7 @@
 package com.example.myapplication;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -25,46 +26,23 @@ public class Settings extends AppCompatActivity {
 
     boolean credentialsAreShowing = false;
 
-    private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
-            = new BottomNavigationView.OnNavigationItemSelectedListener() {
-
-        @Override
-        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-            Intent intent;
-            switch (item.getItemId()) {
-                case R.id.navigation_home:
-                    intent = new Intent(Settings.this, MainActivity.class);
-                    startActivity(intent);
-                    return true;
-                case R.id.navigation_dashboard:
-                    intent = new Intent(Settings.this, BlobListView.class);
-                    startActivity(intent);
-                    return true;
-                case R.id.navigation_notifications:
-                    return true;
-            }
-            return false;
-        }
-    };
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
         BottomNavigationView navView = findViewById(R.id.nav_view);
-        navView.setSelectedItemId(R.id.navigation_notifications);
-        navView.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+        navView.setSelectedItemId(R.id.navigation_settings);
 
         // If credentials for blob storage have been set display them on the editText fields
-        SharedPreferences prefs=this.getSharedPreferences(getString(R.string.app_name),0);
-        String inputContainerName=prefs.getString(getString(R.string.input_container),"");
-        String outputContainerName=prefs.getString(getString(R.string.output_container),"");
-        String connectionString=prefs.getString(getString(R.string.connection_string),"");
-        String email = prefs.getString("email", "");
+        final SharedPreferences preferences = this.getSharedPreferences(getString(R.string.app_name),0);
+        String inputContainerName = preferences.getString(getString(R.string.input_container),"");
+        String outputContainerName = preferences.getString(getString(R.string.output_container),"");
+        String connectionString = preferences.getString(getString(R.string.connection_string),"");
+        String email = preferences.getString("email", "");
 
-        EditText inputContainerNameEditText=findViewById(R.id.inputContainerNameEditText);
-        EditText outputContainerNameEditText=findViewById(R.id.outputContainerNameEditText);
-        EditText connectionStringText=findViewById(R.id.connectionStringEditText);
+        EditText inputContainerNameEditText = findViewById(R.id.inputContainerNameEditText);
+        EditText outputContainerNameEditText = findViewById(R.id.outputContainerNameEditText);
+        EditText connectionStringText = findViewById(R.id.connectionStringEditText);
         final EditText emailEditText = findViewById(R.id.emailEditText);
 
         inputContainerNameEditText.setText(inputContainerName);
@@ -87,6 +65,39 @@ public class Settings extends AppCompatActivity {
                 return false;
             }
         });
+
+        final Context context = this;
+        BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener  = new BottomNavigationView.OnNavigationItemSelectedListener() {
+
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                Intent intent;
+                switch (item.getItemId()) {
+                    case R.id.navigation_home:
+                        return true;
+                    case R.id.navigation_blob_list:
+                        // First check if credentials are set and work
+                        try{
+                            new BlobStorageConnection(preferences);
+                        }catch (NullPointerException e){
+                            Toast.makeText(context, "Please fill in your credentials in the settings page.", Toast.LENGTH_SHORT).show();
+                            Log.e("TAG","Nothing there" );
+                            return false;
+                        }
+
+                        // Then if they are go to BlobListViewActivity
+                        intent = new Intent( Settings.this, BlobListView.class);
+                        startActivity(intent);
+                        return true;
+                    case R.id.navigation_settings:
+                        intent = new Intent(Settings.this, Settings.class);
+                        startActivity(intent);
+                        return true;
+                }
+                return false;
+            }
+        };
+        navView.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
     }
 
     public void setCredentials(View view) {
@@ -114,7 +125,7 @@ public class Settings extends AppCompatActivity {
         Log.d("TAG", "Output container name: " + outputContainerNameString);
         Log.d("TAG", "Connection String: " + connectionStringString);
 
-        editor.commit();
+        editor.apply();
 
         Toast.makeText(this, "Credentials saved.", Toast.LENGTH_SHORT).show();
     }

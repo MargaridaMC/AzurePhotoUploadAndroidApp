@@ -43,9 +43,9 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
                     intent = new Intent(BlobListView.this, MainActivity.class);
                     startActivity(intent);
                     return true;
-                case R.id.navigation_dashboard:
+                case R.id.navigation_blob_list:
                     return true;
-                case R.id.navigation_notifications:
+                case R.id.navigation_settings:
                     intent = new Intent(BlobListView.this, Settings.class);
                     startActivity(intent);
                     return true;
@@ -70,7 +70,7 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_blob_list_view);
         BottomNavigationView navView = findViewById(R.id.nav_view);
-        navView.setSelectedItemId(R.id.navigation_dashboard);
+        navView.setSelectedItemId(R.id.navigation_blob_list);
         navView.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
 
         preferences = this.getSharedPreferences(getString(R.string.app_name), 0);
