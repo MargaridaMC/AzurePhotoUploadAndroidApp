@@ -34,43 +34,43 @@
 
         <TextView
             android:id="@+id/inputContainerTextView"
+            android:labelFor="@+id/inputContainerNameEditText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Input Blob Storage \nContainer Name:"
-            android:textSize="18sp"
-            android:textStyle="bold"
+            android:text="@string/input_container_title"
+            android:textAppearance="@style/NormalText"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
             android:id="@+id/outputContainerTextView"
+            android:labelFor="@+id/outputContainerNameEditText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Output Blob Storage \nContainer Name:"
-            android:textSize="18sp"
-            android:textStyle="bold"
+            android:text="@string/output_container_title"
+            android:textAppearance="@style/NormalText"
             android:layout_marginTop="16dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/inputContainerTextView" />
 
         <TextView
             android:id="@+id/connectionStringTextView"
+            android:labelFor="@+id/connectionStringEditText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Blob Storage\nConnection String:"
-            android:textSize="18sp"
-            android:textStyle="bold"
+            android:text="@string/connection_string_title"
+            android:textAppearance="@style/NormalText"
             android:layout_marginTop="16dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/outputContainerTextView"/>
 
         <TextView
             android:id="@+id/emailTextView"
+            android:labelFor="@+id/emailEditText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Destination\nEmail:"
-            android:textSize="18sp"
-            android:textStyle="bold"
+            android:text="@string/email_title"
+            android:textAppearance="@style/NormalText"
             android:layout_marginTop="16dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/connectionStringTextView"/>
@@ -84,7 +84,8 @@
             app:layout_constraintBottom_toBottomOf="@+id/inputContainerTextView"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@+id/connectionStringEditText"
-            app:layout_constraintTop_toTopOf="@+id/inputContainerTextView" />
+            app:layout_constraintTop_toTopOf="@+id/inputContainerTextView"
+            android:importantForAutofill="no" />
 
         <EditText
             android:id="@+id/outputContainerNameEditText"
@@ -95,7 +96,8 @@
             app:layout_constraintBottom_toBottomOf="@+id/outputContainerTextView"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/outputContainerTextView"
-            app:layout_constraintTop_toTopOf="@+id/outputContainerTextView" />
+            app:layout_constraintTop_toTopOf="@+id/outputContainerTextView"
+            android:importantForAutofill="no" />
 
         <EditText
             android:id="@+id/connectionStringEditText"
@@ -107,7 +109,8 @@
             app:layout_constraintBottom_toBottomOf="@+id/connectionStringTextView"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/connectionStringTextView"
-            app:layout_constraintTop_toTopOf="@+id/connectionStringTextView" />
+            app:layout_constraintTop_toTopOf="@+id/connectionStringTextView"
+            android:importantForAutofill="no"/>
 
         <EditText
             android:id="@+id/emailEditText"
@@ -120,15 +123,17 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/emailTextView"
             app:layout_constraintTop_toTopOf="@+id/emailTextView"
-            android:imeOptions="actionDone"/>
+            android:imeOptions="actionDone"
+            android:importantForAutofill="no"/>
 
         <Button
             android:id="@+id/button3"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
             android:layout_marginTop="0dp"
             android:onClick="setCredentials"
-            android:text="Save"
+            android:text="@string/save"
+            android:theme="@style/ButtonStyle"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@+id/toggleCredentialDisplay" />
@@ -136,9 +141,10 @@
         <Button
             android:id="@+id/button4"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
             android:layout_marginTop="0dp"
-            android:text="Clear"
+            android:text="@string/clear"
+            android:theme="@style/ButtonStyle"
             android:onClick="clearCredentials"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -151,8 +157,9 @@
             android:layout_marginStart="8dp"
             android:layout_marginTop="32dp"
             android:layout_marginEnd="8dp"
-            android:text="Display\nCredentials"
+            android:text="@string/display_credentials"
             android:onClick="toggleDisplayCredentials"
+            android:theme="@style/ButtonStyle"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/button3"
             app:layout_constraintStart_toEndOf="@+id/button4"
