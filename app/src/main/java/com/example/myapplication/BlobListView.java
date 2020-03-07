@@ -47,6 +47,7 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
                 return false;
             };
 
+    SwipeRefreshLayout swipeContainer;
     static  BlobStorageConnection blobStorageConnection;
     ArrayList<String> inputBlobList;
     ArrayList<String> outputBlobList;
@@ -69,7 +70,7 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
         blobStorageConnection = new BlobStorageConnection(preferences);
         checkCredentials();
 
-        SwipeRefreshLayout swipeContainer = findViewById(R.id.swipeContainer);
+        swipeContainer = findViewById(R.id.swipeContainer);
 
         // Setup refresh listener which triggers new data loading
         swipeContainer.setOnRefreshListener(onLayoutRefresh);
@@ -102,8 +103,6 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
             fillBlobList(inputBlobList, outputBlobList);
 
         }
-
-
     }
 
     SwipeRefreshLayout.OnRefreshListener onLayoutRefresh = new SwipeRefreshLayout.OnRefreshListener() {
@@ -114,7 +113,7 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
             asyncTask.delegate = thisClass;
             asyncTask.execute();
             fillBlobList(inputBlobList, outputBlobList);
-            //swipeContainer.setRefreshing(false);
+            swipeContainer.setRefreshing(false);
         }};
 
     @Override
