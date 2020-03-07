@@ -34,11 +34,14 @@ public class MyRecyclerViewAdapter extends RecyclerView.Adapter<MyRecyclerViewAd
     // binds the data to the TextView in each row
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
+
+        holder.setIsRecyclable(false);
+
         String element = mData.get(position);
-        holder.myTextView.setText(element);
-        holder.myTextView.setTextSize(18);
+        holder.blobName.setText(element);
+
         if(position == 0 || position == 1 + numInputBlobs){
-            holder.myTextView.setTypeface(null, Typeface.BOLD_ITALIC);
+            holder.blobName.setTypeface(null, Typeface.BOLD_ITALIC);
         }
     }
 
@@ -51,17 +54,18 @@ public class MyRecyclerViewAdapter extends RecyclerView.Adapter<MyRecyclerViewAd
 
     // stores and recycles views as they are scrolled off screen
     public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
-        TextView myTextView;
+        TextView blobName;
 
         ViewHolder(View itemView) {
             super(itemView);
-            myTextView = itemView.findViewById(R.id.row);
+            blobName = itemView.findViewById(R.id.row);
             itemView.setOnClickListener(this);
         }
 
         @Override
         public void onClick(View view) {
-            if (mClickListener != null) mClickListener.onItemClick(view, getAdapterPosition());
+            if (mClickListener != null)
+                mClickListener.onItemClick(view, getAdapterPosition());
         }
     }
 

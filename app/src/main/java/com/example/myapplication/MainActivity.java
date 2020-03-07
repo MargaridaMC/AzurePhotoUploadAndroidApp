@@ -8,7 +8,6 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -21,17 +20,15 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.ActivityCompat;
-import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.FileProvider;
 import android.text.InputFilter;
-import android.text.Spanned;
 import android.util.Log;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
+
 
 import com.google.gson.Gson;
 
@@ -77,35 +74,31 @@ public class MainActivity extends Activity implements OutboxCheck, UploadedToSto
         }
 
         final Context context = this;
-        BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener  = new BottomNavigationView.OnNavigationItemSelectedListener() {
+        BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener  = item -> {
+            Intent intent;
+            switch (item.getItemId()) {
+                case R.id.navigation_home:
+                    return true;
+                case R.id.navigation_blob_list:
+                    // First check if credentials are set
+                    try{
+                        blobStorageConnection = new BlobStorageConnection(preferences);
+                    }catch (NullPointerException e){
+                        Toast.makeText(context, "Please fill in your credentials in the settings page.", Toast.LENGTH_SHORT).show();
+                        Log.e("TAG","Nothing there" );
+                        return false;
+                    }
 
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                Intent intent;
-                switch (item.getItemId()) {
-                    case R.id.navigation_home:
-                        return true;
-                    case R.id.navigation_blob_list:
-                        // First check if credentials are set
-                        try{
-                            blobStorageConnection = new BlobStorageConnection(preferences);
-                        }catch (NullPointerException e){
-                            Toast.makeText(context, "Please fill in your credentials in the settings page.", Toast.LENGTH_SHORT).show();
-                            Log.e("TAG","Nothing there" );
-                            return false;
-                        }
-
-                        // Then if they are go to BlobListViewActivity
-                        intent = new Intent(MainActivity.this, BlobListView.class);
-                        startActivity(intent);
-                        return true;
-                    case R.id.navigation_settings:
-                        intent = new Intent(MainActivity.this, Settings.class);
-                        startActivity(intent);
-                        return true;
-                }
-                return false;
+                    // Then if they are go to BlobListViewActivity
+                    intent = new Intent(MainActivity.this, BlobListView.class);
+                    startActivity(intent);
+                    return true;
+                case R.id.navigation_settings:
+                    intent = new Intent(MainActivity.this, Settings.class);
+                    startActivity(intent);
+                    return true;
             }
+            return false;
         };
 
 
@@ -153,16 +146,12 @@ public class MainActivity extends Activity implements OutboxCheck, UploadedToSto
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
             builder.setMessage("Please fill in your blob storage information in the settings page.");
-            builder.setPositiveButton("Go to Settings", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
-                    Intent intent = new Intent(MainActivity.this, Settings.class);
-                    startActivity(intent);
-                }
+            builder.setPositiveButton("Go to Settings", (dialog, id) -> {
+                Intent intent = new Intent(MainActivity.this, Settings.class);
+                startActivity(intent);
             });
-            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
+            builder.setNegativeButton("Cancel", (dialog, id) -> {
 
-                }
             });
 
             AlertDialog dialog = builder.create();
@@ -256,16 +245,13 @@ public class MainActivity extends Activity implements OutboxCheck, UploadedToSto
 
     }
 
-    InputFilter filter = new InputFilter() {
-        public CharSequence filter(CharSequence source, int start, int end,
-                                   Spanned dest, int dstart, int dend) {
-            for (int i = start; i < end; i++) {
-                if (!(Character.isLetterOrDigit(source.charAt(i)) || source.charAt(i) == '_')) {
-                    return "";
-                }
+    InputFilter filter = (source, start, end, dest, dstart, dend) -> {
+        for (int i = start; i < end; i++) {
+            if (!(Character.isLetterOrDigit(source.charAt(i)) || source.charAt(i) == '_')) {
+                return "";
             }
-            return null;
         }
+        return null;
     };
 
     public void requestFilename(final int requestCode, final int resultCode, final Intent data){
@@ -286,19 +272,11 @@ public class MainActivity extends Activity implements OutboxCheck, UploadedToSto
         builder.setView(input);
 
         // Set up the buttons
-        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                filename = input.getText().toString();
-                continueOnActivityResult( requestCode, resultCode, data);
-            }
+        builder.setPositiveButton("OK", (dialog, which) -> {
+            filename = input.getText().toString();
+            continueOnActivityResult( requestCode, resultCode, data);
         });
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.cancel();
-            }
-        });
+        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
 
         AlertDialog dialog = builder.create();
         dialog.setCanceledOnTouchOutside(false);

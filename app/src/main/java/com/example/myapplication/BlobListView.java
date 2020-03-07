@@ -3,7 +3,6 @@ package com.example.myapplication;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -12,13 +11,11 @@ import android.os.Environment;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.content.FileProvider;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.annotation.NonNull;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.Gravity;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
@@ -33,33 +30,28 @@ import java.util.concurrent.TimeUnit;
 public class BlobListView extends Activity implements MyRecyclerViewAdapter.ItemClickListener, AsyncResponse, BlobDeleted {
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
-            = new BottomNavigationView.OnNavigationItemSelectedListener() {
-
-        @Override
-        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-            Intent intent;
-            switch (item.getItemId()) {
-                case R.id.navigation_home:
-                    intent = new Intent(BlobListView.this, MainActivity.class);
-                    startActivity(intent);
-                    return true;
-                case R.id.navigation_blob_list:
-                    return true;
-                case R.id.navigation_settings:
-                    intent = new Intent(BlobListView.this, Settings.class);
-                    startActivity(intent);
-                    return true;
-            }
-            return false;
-        }
-    };
+            = item -> {
+                Intent intent;
+                switch (item.getItemId()) {
+                    case R.id.navigation_home:
+                        intent = new Intent(BlobListView.this, MainActivity.class);
+                        startActivity(intent);
+                        return true;
+                    case R.id.navigation_blob_list:
+                        return true;
+                    case R.id.navigation_settings:
+                        intent = new Intent(BlobListView.this, Settings.class);
+                        startActivity(intent);
+                        return true;
+                }
+                return false;
+            };
 
     static  BlobStorageConnection blobStorageConnection;
     ArrayList<String> inputBlobList;
     ArrayList<String> outputBlobList;
     SharedPreferences preferences;
 
-    private SwipeRefreshLayout swipeContainer;
     final BlobListView thisClass = this;
     int numberInputBlobs = 0;
     String TAG = "TAG";
@@ -77,7 +69,7 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
         blobStorageConnection = new BlobStorageConnection(preferences);
         checkCredentials();
 
-        swipeContainer = findViewById(R.id.swipeContainer);
+        SwipeRefreshLayout swipeContainer = findViewById(R.id.swipeContainer);
 
         // Setup refresh listener which triggers new data loading
         swipeContainer.setOnRefreshListener(onLayoutRefresh);
@@ -122,7 +114,7 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
             asyncTask.delegate = thisClass;
             asyncTask.execute();
             fillBlobList(inputBlobList, outputBlobList);
-            swipeContainer.setRefreshing(false);
+            //swipeContainer.setRefreshing(false);
         }};
 
     @Override
@@ -132,16 +124,12 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
             builder.setMessage("Are you sure the your inputted the names of your containers correctly? They weren't found. Please check your blob storage information in the settings page.");
-            builder.setPositiveButton("Go to Settings", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
-                    Intent intent = new Intent(thisClass, Settings.class);
-                    thisClass.startActivity(intent);
-                }
+            builder.setPositiveButton("Go to Settings", (dialog, id) -> {
+                Intent intent = new Intent(thisClass, Settings.class);
+                thisClass.startActivity(intent);
             });
-            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
+            builder.setNegativeButton("Cancel", (dialog, id) -> {
 
-                }
             });
 
             AlertDialog dialog = builder.create();
@@ -176,15 +164,14 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
         numberInputBlobs = inputBlobList.size();
 
         ArrayList<String> allBlobs = new ArrayList<>();
-        allBlobs.add("Input Container Blobs:");
+        allBlobs.add(getString(R.string.input_blobs));
         allBlobs.addAll(inputBlobList);
-        allBlobs.add("Output Container Blobs:");
+        allBlobs.add(getString(R.string.output_blobs));
         allBlobs.addAll(outputBlobList);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         MyRecyclerViewAdapter recyclerViewAdapter = new MyRecyclerViewAdapter(this, allBlobs, numberInputBlobs);
         recyclerViewAdapter.setClickListener(this);
-        recyclerView.setAdapter(recyclerViewAdapter);
         recyclerView.setAdapter(recyclerViewAdapter);
 
     }
@@ -199,15 +186,11 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
             builder.setMessage("Please fill in your blob storage information in the settings page.");
-            builder.setPositiveButton("Go to Settings", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
-                    Intent intent = new Intent(BlobListView.this, Settings.class);
-                    startActivity(intent);
-                }
+            builder.setPositiveButton("Go to Settings", (dialog, id) -> {
+                Intent intent = new Intent(BlobListView.this, Settings.class);
+                startActivity(intent);
             });
-            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
-                }
+            builder.setNegativeButton("Cancel", (dialog, id) -> {
             });
 
             AlertDialog dialog = builder.create();
@@ -227,6 +210,9 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
         final Context context = this.getApplicationContext();
         final String blobType;
 
+        Toast t = Toast.makeText(this, "you clicked position: " + position, Toast.LENGTH_SHORT);
+        t.show();
+
         if(position <= numberInputBlobs + 1){
             blobType = "input";
             selectedBlobName = this.inputBlobList.get(position - 1);
@@ -243,32 +229,29 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
         popupMenu.getMenuInflater().inflate(R.menu.blob_list_popup_menu,popupMenu.getMenu());
         popupMenu.setGravity(Gravity.END);
 
-        popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem menuItem) {
-                switch(menuItem.getItemId()){
-                    // Handle the non group menu items here
-                    case R.id.view:
-                        viewImage(selectedBlobName, blobType);
-                        return true;
-                    case R.id.attach_to_email:
-                        ArrayList<String> attachment = new ArrayList<>();
-                        attachment.add(selectedBlobName);
-                        attachImageToEmail(context, attachment, blobType);
-                        return true;
-                    case R.id.delete:
-                        // Set the text color to blue
-                        DeleteBlob deleteBlob = new DeleteBlob(blobStorageConnection);
-                        deleteBlob.delegate = thisClass;
-                        deleteBlob.execute(selectedBlobName, blobType);
+        popupMenu.setOnMenuItemClickListener(menuItem -> {
+            switch(menuItem.getItemId()){
+                // Handle the non group menu items here
+                case R.id.view:
+                    viewImage(selectedBlobName, blobType);
+                    return true;
+                case R.id.attach_to_email:
+                    ArrayList<String> attachment = new ArrayList<>();
+                    attachment.add(selectedBlobName);
+                    attachImageToEmail(context, attachment, blobType);
+                    return true;
+                case R.id.delete:
+                    // Set the text color to blue
+                    DeleteBlob deleteBlob = new DeleteBlob(blobStorageConnection);
+                    deleteBlob.delegate = thisClass;
+                    deleteBlob.execute(selectedBlobName, blobType);
 
-                        ListContainerBlobs listBlobs = new ListContainerBlobs(blobStorageConnection);
-                        listBlobs.delegate = thisClass;
-                        listBlobs.execute();
-                        return true;
-                    default:
-                        return false;
-                }
+                    ListContainerBlobs listBlobs = new ListContainerBlobs(blobStorageConnection);
+                    listBlobs.delegate = thisClass;
+                    listBlobs.execute();
+                    return true;
+                default:
+                    return false;
             }
         });
 
