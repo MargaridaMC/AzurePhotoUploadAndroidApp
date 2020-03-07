@@ -27,7 +27,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
-public class BlobListView extends Activity implements MyRecyclerViewAdapter.ItemClickListener, AsyncResponse, BlobDeleted {
+public class BlobListView extends Activity implements MyRecyclerViewAdapter.ItemClickListener, AsyncResponse, BlobDeleted, ImageDownloaded {
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = item -> {
@@ -209,9 +209,6 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
         final Context context = this.getApplicationContext();
         final String blobType;
 
-        Toast t = Toast.makeText(this, "you clicked position: " + position, Toast.LENGTH_SHORT);
-        t.show();
-
         if(position <= numberInputBlobs + 1){
             blobType = "input";
             selectedBlobName = this.inputBlobList.get(position - 1);
@@ -271,7 +268,8 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
             Log.d("TAG", "File hasn't been downloaded. Trying to download " + filename);
             DownloadBlob downloadBlob = new DownloadBlob(blobStorageConnection, blobType);
             downloadBlob.execute(filename);
-            viewImage(filename, blobType);
+            downloadBlob.delegate = this;
+            return;
         }
 
         Intent intent = new Intent(Intent.ACTION_VIEW);
@@ -359,6 +357,14 @@ public class BlobListView extends Activity implements MyRecyclerViewAdapter.Item
     public void blobDeletedSuccess(boolean success, String blobToDeleteName, String blobType){
         if(success) Toast.makeText(this, "Successfully deleted " + blobToDeleteName + " from " + blobType + " folder.", Toast.LENGTH_LONG).show();
         else Toast.makeText(this, "Couldn't delete " + blobToDeleteName + " from " + blobType + " folder.", Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void imageDownloaded(boolean success, String filename, String blobType) {
+        if(success){
+            viewImage(filename, blobType);
+        }
+
     }
 }
 
